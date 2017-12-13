@@ -26,14 +26,10 @@ metrics:
       state: free
   proc.net.bytes:
     standard_name: node.network.bytes.count
-    description: >
-                 "Number of bytes the node in question has read or written from/to the network, measured per network
-                 interface (identified by 'iface' tag) & demarcated by values of 'direction' tag (in|out). (counter)"
+    description: "Number of bytes the node in question has read or written from/to the network, measured per network interface (identified by 'iface' tag) & demarcated by values of 'direction' tag (in|out). (counter)"
   df.bytes.percentused:
     standard_name: node.disk.used.percent
-    description: >
-                 "Disk usage on the node measured per 'mount' (tag) point and expressed as a percentage of
-                 total available space on the mounted device. (gauge)"
+    description: "Disk usage on the node measured per 'mount' (tag) point and expressed as a percentage of total available space on the mounted device. (gauge)"
   df.bytes.free:
     standard_name: node.disk.bytes
     description: "Disk free space on the node measured per 'mount' point in bytes. (gauge)"
@@ -55,9 +51,7 @@ metrics:
     description: "Number of interrupts on the node at a given time. (gauge)"
   iostat.disk.util:
     standard_name: node.disk.uptime.percent
-    description: >
-                 "Node's disk utility expressed per 'device' as percent of total uptime of the node spent in issuing
-                 I/O requests to the device in question. (gauge)"
+    description: "Node's disk utility expressed per 'device' as percent of total uptime of the node spent in issuing I/O requests to the device in question. (gauge)"
   proc.meminfo.swaptotal:
     standard_name: node.swap.total.bytes
     description: "Total swap space available on the node measured in bytes. (gauge)"

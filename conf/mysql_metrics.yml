@@ -185,8 +185,7 @@ metrics:
       handler: "delete"
   mysql.handler_discover:
     standard_name: mysql.handlers.count
-    description: "Indicates the number of times that tables have been discovered using NDBCLUSTER storage engine.
-    (counter)"
+    description: "Indicates the number of times that tables have been discovered using NDBCLUSTER storage engine. (counter)"
     tags:
       handler: "discover"
   mysql.handler_prepare:

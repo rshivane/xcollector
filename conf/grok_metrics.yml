@@ -6,8 +6,7 @@ metrics:
     description: "Total number of requests served by tomcat instance since startup. (counter)"
   tomcat_response_latency:
     standard_name: tomcat.response.duration.seconds
-    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response
-    time in seconds. (histogram)"
+    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response time in seconds. (histogram)"
   tomcat_response_latency_sum:
     standard_name: tomcat.response.duration.sum
     description: "Implicit Unit metric generated as part of the response duration histogram. (gauge)"
@@ -16,15 +15,13 @@ metrics:
     description: "Implicit Unit metric generated as part of the response duration histogram. (counter)"
   tomcat_response_count:
     standard_name: tomcat.response.count
-    description: "Total number of request-responses seggregated by HTTP response code i.e., 200, 302, 404, etc.
-    (counter)"
+    description: "Total number of request-responses seggregated by HTTP response code i.e., 200, 302, 404, etc. (counter)"
   nginx_request_count:
     standard_name: nginx.request.count
     description: "Total number of requests served by nginx instance since startup. (counter)"
   nginx_response_latency:
     standard_name: nginx.response.duration.seconds
-    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response
-                      time (as reported by nginx) measured in seconds. (histogram)"
+    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response time (as reported by nginx) measured in seconds. (histogram)"
   nginx_response_latency_sum:
      standard_name: nginx.response.duration.sum.seconds
      description: "Same as nginx_response_latency"
@@ -33,9 +30,7 @@ metrics:
      description: "Same as nginx_response_latency"
   nginx_upstream_response_latency:
     standard_name: nginx.response.upstream.duration.seconds
-    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response
-                                        time (as reported by nginx) for upstream servers like Tomcat measured in
-                                        seconds. (histogram)"
+    description: "A summary (histogram) of the response duration measured in seconds with various centiles of response time (as reported by nginx) for upstream servers like Tomcat measured in seconds. (histogram)"
   nginx_upstream_response_latency_sum:
     standard_name: nginx.response.upstream.duration.sum.seconds
     description: "Same as nginx_upstream_response_latency"

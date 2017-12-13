@@ -42,10 +42,11 @@ def is_sockfile(path):
     """Returns whether or not the given path is a socket file."""
     try:
         s = os.stat(path)
-    except OSError, (no, e):
+    except OSError as osex:
+        no = osex.errno
         if no == errno.ENOENT:
             return False
-        err("warning: couldn't stat(%r): %s" % (path, e))
+        err("warning: couldn't stat(%r): %s" % (path, osex))
         return None
     return s.st_mode & stat.S_IFSOCK == stat.S_IFSOCK
 

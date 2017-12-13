@@ -31,6 +31,7 @@ deb:
 	mkdir -p build/usr/local/xcollector/collectors/0/
 	mkdir -p build/usr/local/xcollector/collectors/etc/
 	mkdir -p build/usr/local/xcollector/collectors/lib/
+	mkdir -p build/usr/local/xcollector/collectors/lib/poyo
 	mkdir -p build/usr/local/xcollector/conf/
 	cp -r DEBIAN/* build/DEBIAN/
 	cp -r etc/ build/
@@ -52,6 +53,7 @@ deb:
 	cp $(VPATH)/collectors/etc/yaml_conf.py build/usr/local/xcollector/collectors/etc/
 	cp $(VPATH)/collectors/lib/__init__.py build/usr/local/xcollector/collectors/lib/
 	cp $(VPATH)/collectors/lib/utils.py build/usr/local/xcollector/collectors/lib/
+	cp $(VPATH)/collectors/lib/poyo/*.py build/usr/local/xcollector/collectors/lib/poyo
 	cp $(VPATH)/conf/*.yml build/usr/local/xcollector/conf/
 	cp -r $(VPATH)/grok_exporter/ build/usr/local/xcollector/
 	cp $(VPATH)/tcollector.py build/usr/local/xcollector/xcollector.py

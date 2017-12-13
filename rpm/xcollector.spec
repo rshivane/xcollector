@@ -42,6 +42,7 @@ mkdir -p %{buildroot}/etc/init.d/
 # Install Base files
 mkdir -p %{buildroot}%{tcollectordir}/conf/
 mkdir -p %{buildroot}%{tcollectordir}/collectors/lib/
+mkdir -p %{buildroot}%{tcollectordir}/collectors/lib/poyo
 mkdir -p %{buildroot}%{tcollectordir}/collectors/etc/
 mkdir -p %{buildroot}%{grokexpdir}/patterns/
 %{__install} -m 0755 -D %{grokexprootdir}/grok_exporter %{buildroot}%{grokexpdir}/grok_exporter
@@ -49,6 +50,7 @@ mkdir -p %{buildroot}%{grokexpdir}/patterns/
 %{__install} -m 0755 -D %{rootdir}/conf/* %{buildroot}%{tcollectordir}/conf/
 %{__install} -m 0755 -D %{srccollectors}/__init__.py %{buildroot}%{tcollectordir}/collectors/
 %{__install} -m 0755 -D %{srccollectors}/lib/*py* %{buildroot}%{tcollectordir}/collectors/lib/
+%{__install} -m 0755 -D %{srccollectors}/lib/poyo/* %{buildroot}%{tcollectordir}/collectors/lib/poyo
 %{__install} -m 0755 -D %{srccollectors}/etc/* %{buildroot}%{tcollectordir}/collectors/etc/
 %{__install} -m 0755 -D %{rootdir}/tcollector.py %{buildroot}%{tcollectordir}/xcollector.py
 %{__install} -m 0755 -D %{rootdir}/grok_scraper.py %{buildroot}%{tcollectordir}/grok_scraper.py
@@ -73,6 +75,13 @@ mkdir -p %{buildroot}/%{py2_sitelib}/
 %{tcollectordir}/collectors/lib/__init__.py
 %{tcollectordir}/collectors/lib/utils.py
 #%{tcollectordir}/collectors/lib/hadoop_http.py
+%dir %{tcollectordir}/collectors/lib/poyo/
+%{tcollectordir}/collectors/lib/poyo/__init__.py
+%{tcollectordir}/collectors/lib/poyo/_nodes.py
+%{tcollectordir}/collectors/lib/poyo/exceptions.py
+%{tcollectordir}/collectors/lib/poyo/parser.py
+%{tcollectordir}/collectors/lib/poyo/patterns.py
+%{tcollectordir}/collectors/lib/poyo/utils.py
 %dir %{tcollectordir}/collectors/etc/
 %{tcollectordir}/collectors/etc/__init__.py
 %{tcollectordir}/collectors/etc/config.py

@@ -2,7 +2,7 @@
 
 import os
 import sys
-import yaml
+from collectors.lib import poyo
 
 
 def load_collector_configuration(config_file):
@@ -13,6 +13,6 @@ def load_collector_configuration(config_file):
         yaml_conf_dir = os.path.join(current_script_dir, 'conf')
     with open(os.path.join(yaml_conf_dir, config_file), 'r') as stream:
         try:
-            return yaml.load(stream)
-        except yaml.YAMLError as exc:
+            return poyo.parse_string(stream.read())
+        except poyo.PoyoException as exc:
             print("Type error: {0}".format(exc))

@@ -16,20 +16,17 @@ metrics:
     description: "Number of open connections to this Memcached server. (gauge)"
   memcache.listen_disabled_num:
     standard_name: memcached.connections.error.count
-    description: "Number of denied connection attempts because memcached reached it's configured connection limit
-    (\"-c\" command line argument). (counter)"
+    description: "Number of denied connection attempts because memcached reached it's configured connection limit (\"-c\" command line argument). (counter)"
     tags:
       state: "listen_disbaled"
   memcache.conn_yields:
     standard_name: memcached.connections.error.count
-    description: "Memcached has a configurable maximum number of requests per event (-R command line argument),
-    this counter shows the number of times any client hit this limit. (counter)"
+    description: "Memcached has a configurable maximum number of requests per event (-R command line argument), this counter shows the number of times any client hit this limit. (counter)"
     tags:
       state: "yields"
   memcache.curr_items:
     standard_name: memcached.items
-    description: "Number of items currently in this server's cache. The production system of this development
-    environment holds more than 8 million items. (gauge)"
+    description: "Number of items currently in this server's cache. The production system of this development environment holds more than 8 million items. (gauge)"
   memcache.cmd_set:
     standard_name: memcached.commands.count
     description: "Number of \"set\" commands serviced since startup. (counter)"
@@ -37,14 +34,12 @@ metrics:
       command: "set"
   memcache.cmd_get:
     standard_name: memcached.commands.count
-    description: "Number of \"get\" commands received since server startup not counting if they were successful or not
-    . (counter)"
+    description: "Number of \"get\" commands received since server startup not counting if they were successful or not . (counter)"
     tags:
       command: "get"
   memcache.cmd_flush:
     standard_name: memcached.commands.count
-    description: "The \"flush_all\" command clears the whole cache and shouldn't be used during normal operation.
-    (counter)"
+    description: "The \"flush_all\" command clears the whole cache and shouldn't be used during normal operation. (counter)"
     tags:
       command: "flush"
   memcache.cmd_touch:
@@ -59,28 +54,22 @@ metrics:
       command: "compare_and_set"
   memcache.decr_hits:
     standard_name: memcached.commands.hits.count
-    description: "The \"decr\" command decreases a stored (integer) value by 1. A \"hit\" is a \"decr\" call to an
-    existing key. (counter)"
+    description: "The \"decr\" command decreases a stored (integer) value by 1. A \"hit\" is a \"decr\" call to an existing key. (counter)"
     tags:
       command: "decrement"
   memcache.incr_hits:
     standard_name: memcached.commands.hits.count
-    description: "Number of successful \"incr\" commands processed. \"incr\" is a replace adding 1 to the stored value
-    and failing if no value is stored. This specific installation (currently) doesn't use incr/decr commands, so all their values are zero. (counter)"
+    description: "Number of successful \"incr\" commands processed. \"incr\" is a replace adding 1 to the stored value and failing if no value is stored. This specific installation (currently) doesn't use incr/decr commands, so all their values are zero. (counter)"
     tags:
       command: "increment"
   memcache.get_hits:
     standard_name: memcached.commands.hits.count
-    description: "Number of successful \"get\" commands (cache hits) since startup, divide them by the \"cmd_get\" value
-     to get the cache hitrate: This server was able to serve 24% of it's get requests from the cache, the live servers
-     of this installation usually have more than 98% hits. (counter)"
+    description: "Number of successful \"get\" commands (cache hits) since startup, divide them by the \"cmd_get\" value to get the cache hitrate: This server was able to serve 24% of it's get requests from the cache, the live servers of this installation usually have more than 98% hits. (counter)"
     tags:
       command: "get"
   memcache.delete_hits:
     standard_name: memcached.commands.hits.count
-    description: "Stored keys may be deleted using the \"delete\" command, this system doesn't delete cached data
-    itself, but it's using the Memcached to avoid recaching-races and the race keys are deleted once the race is over
-    and fresh content has been cached. (counter)"
+    description: "Stored keys may be deleted using the \"delete\" command, this system doesn't delete cached data itself, but it's using the Memcached to avoid recaching-races and the race keys are deleted once the race is over and fresh content has been cached. (counter)"
     tags:
       command: "delete"
   memcache.cas_misses:
@@ -100,30 +89,25 @@ metrics:
       command: "increment"
   memcache.get_misses:
     standard_name: memcached.commands.misses.count
-    description: "Number of failed \"get\" requests because nothing was cached for this key or the cached value was
-    too old. (counter)"
+    description: "Number of failed \"get\" requests because nothing was cached for this key or the cached value was too old. (counter)"
     tags:
       command: "get"
   memcache.delete_misses:
     standard_name: memcached.commands.misses.count
-    description: "Number of \"delete\" commands for keys not existing within the cache. These 107k failed deletes are
-    deletions of non existent race keys (see above). (counter)"
+    description: "Number of \"delete\" commands for keys not existing within the cache. These 107k failed deletes are deletions of non existent race keys (see above). (counter)"
     tags:
       command: "delete"
   memcache.bytes:
     standard_name: memcached.memory.bytes
-    description: "Number of bytes currently used for caching items, this server currently uses ~6 MB of it's maximum
-    allowed (limit_maxbytes) 1 GB cache size. (gauge)"
+    description: "Number of bytes currently used for caching items, this server currently uses ~6 MB of it's maximum allowed (limit_maxbytes) 1 GB cache size. (gauge)"
     tags:
       state: "used"
   memcache.limit_maxbytes:
     standard_name: memcached.memory.limit.bytes
-    description: "Maximum configured cache size (set on the command line while starting the memcached server), look at
-    the \"bytes\" value for the actual usage. (gauge)"
+    description: "Maximum configured cache size (set on the command line while starting the memcached server), look at the \"bytes\" value for the actual usage. (gauge)"
   memcache.evictions:
     standard_name: memcached.evictions.count
-    description: "Number of objects removed from the cache to free up memory for new items because Memcached reached
-    it's maximum memory setting (limit_maxbytes). (counter)"
+    description: "Number of objects removed from the cache to free up memory for new items because Memcached reached it's maximum memory setting (limit_maxbytes). (counter)"
   memcache.bytes_read:
     standard_name: memcached.network.bytes.count
     description: "Total number of bytes received from the network by this server. (counter)"
