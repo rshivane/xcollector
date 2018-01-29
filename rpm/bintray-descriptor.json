@@ -9,8 +9,7 @@
     "name": "@PACKAGE_VERSION@",
     "desc": "Version @PACKAGE_VERSION@",
     "released": "@PACKAGE_DATE@",
-    "vcs_tag": "apptuit-v@PACKAGE_VERSION@",
-    "gpgSign": true
+    "vcs_tag": "apptuit-v@PACKAGE_VERSION@"
   },
 
   "files":
