@@ -26,6 +26,8 @@ before_deploy:
   - echo $PACKAGE_DATE;
   - sed -e "s/@PACKAGE_DATE@/$PACKAGE_DATE/" -e "s/@PACKAGE_VERSION@/$PACKAGE_VERSION/" -i deb/bintray-descriptor.json;
   - cat deb/bintray-descriptor.json;
+  - sed -e "s/@PACKAGE_DATE@/$PACKAGE_DATE/" -e "s/@PACKAGE_VERSION@/$PACKAGE_VERSION/" -i rpm/bintray-descriptor.json;
+  - cat rpm/bintray-descriptor.json;
 
 deploy:
   - provider: bintray
