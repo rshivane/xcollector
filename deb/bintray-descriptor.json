@@ -6,10 +6,10 @@
   },
 
   "version": {
-    "name": "0.5",
-    "desc": "This is a version",
-    "released": "2015-01-04",
-    "vcs_tag": "apptuit-v0.5",
+    "name": "@PACKAGE_VERSION@",
+    "desc": "Version @PACKAGE_VERSION@",
+    "released": "@PACKAGE_DATE@",
+    "vcs_tag": "apptuit-v@PACKAGE_VERSION@",
     "gpgSign": true
   },
 
