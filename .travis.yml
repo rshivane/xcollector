@@ -22,11 +22,11 @@ script:
 
 
 before_deploy:
-    - echo $TRAVIS_COMMIT
-    - echo $TRAVIS_TAG
-    - echo $TRAVIS_BRANCH
-    - echo $TRAVIS_BUILD_NUMBER
-    - echo $TRAVIS_REPO_SLUG
+  - PACKAGE_DATE=$(git log -1 --pretty="format:%ad" $TRAVIS_TAG --date=short)
+  - echo $PACKAGE_DATE;
+  - sed -ei 's/@PACKAGE_DATE@/$(PACKAGE_DATE)/' deb/bintray-descriptor.json;
+  - sed -ei 's/@PACKAGE_VERSION@/$(PACKAGE_VERSION)/' deb/bintray-descriptor.json;
+  - cat deb/bintray-descriptor.json;
 
 deploy:
   - provider: bintray
