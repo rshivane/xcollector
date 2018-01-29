@@ -13,7 +13,11 @@
 
 # This Makefile is a complete train wreck.  I'm sorry.  --tsuna
 
-PACKAGE_VERSION := 0.8.2
+
+ifeq ($(PACKAGE_VERSION),)
+PACKAGE_VERSION := 0.1.0
+endif
+
 RPM_REVISION := 1
 
 # In some environment this command can be called `gsha1sum' or `digest'.
