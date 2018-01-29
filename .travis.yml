@@ -35,4 +35,4 @@ deploy:
     key: "$BINTRAY_API_KEY"
     on:
       tags: true
-      condition: "$PACKAGE_VERSION" != ""
+      condition: $PACKAGE_VERSION != ""
