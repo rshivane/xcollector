@@ -17,9 +17,8 @@ before_script:
 script:
   - ./pylint-runner.py -s
   - ./tests.py
-  - cd rpm; make; cd ..
-  - echo $PACKAGE_VERSION
-  - cd deb; make; cd ..
+  - make -C rpm
+  - make -C deb
 
 
 before_deploy:
