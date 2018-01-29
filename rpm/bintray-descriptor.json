@@ -14,7 +14,7 @@
 
   "files":
   [
-    {"includePattern": "deb/dist/(.*\\.rpm)", "uploadPattern": "/$1"}
+    {"includePattern": "rpm/dist/(.*\\.rpm)", "uploadPattern": "/$1"}
   ],
   "publish": true
 }
