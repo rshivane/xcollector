@@ -1,10 +1,5 @@
 language: python
 
-branches:
-  only:
-    - apptuit-master
-    - bintray-upload
-
 python:
   - "2.6"
   - "2.7"
