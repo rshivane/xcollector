@@ -18,6 +18,7 @@ script:
   - ./pylint-runner.py -s
   - ./tests.py
   - cd rpm; make; cd ..
+  - echo $PACKAGE_VERSION
   - cd deb; make; cd ..
 
 
