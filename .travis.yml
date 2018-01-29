@@ -9,6 +9,10 @@ install:
   - sudo apt-get install -y rpm
   - pip install pylint ordereddict pyyaml mysqlclient
 
+before_script:
+  - echo $TRAVIS_TAG
+  - echo $PACKAGE_VERSION
+
 script:
   - ./pylint-runner.py -s
   - ./tests.py
