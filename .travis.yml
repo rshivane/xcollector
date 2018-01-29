@@ -22,11 +22,13 @@ script:
 
 
 before_deploy:
-  - PACKAGE_DATE=$(git log -1 --pretty="format:%ad" $TRAVIS_TAG --date=short)
-  - echo $PACKAGE_DATE;
-  - sed -ei 's/@PACKAGE_DATE@/$(PACKAGE_DATE)/' deb/bintray-descriptor.json;
-  - sed -ei 's/@PACKAGE_VERSION@/$(PACKAGE_VERSION)/' deb/bintray-descriptor.json;
-  - cat deb/bintray-descriptor.json;
+  - if [[ "$PACKAGE_VERSION" != "" ]]; then
+      PACKAGE_DATE=$(git log -1 --pretty="format:%ad" $TRAVIS_TAG --date=short);
+      echo $PACKAGE_DATE;
+      sed -ei 's/@PACKAGE_DATE@/$(PACKAGE_DATE)/' deb/bintray-descriptor.json;
+      sed -ei 's/@PACKAGE_VERSION@/$(PACKAGE_VERSION)/' deb/bintray-descriptor.json;
+      cat deb/bintray-descriptor.json;
+    fi
 
 deploy:
   - provider: bintray
@@ -35,4 +37,4 @@ deploy:
     key: "$BINTRAY_API_KEY"
     on:
       tags: true
-      condition: $TRAVIS_TAG == apptuit-v*
+      condition: "$PACKAGE_VERSION" != ""
