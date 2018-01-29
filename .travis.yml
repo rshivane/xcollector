@@ -9,10 +9,6 @@ install:
   - sudo apt-get install -y rpm
   - pip install pylint ordereddict pyyaml mysqlclient
 
-before_script:
-  - echo $TRAVIS_TAG
-  - echo $PACKAGE_VERSION
-
 script:
   - ./pylint-runner.py -s
   - ./tests.py
@@ -21,11 +17,11 @@ script:
 
 
 before_deploy:
-  - PACKAGE_DATE=$(git log -1 --pretty="format:%ad" $TRAVIS_TAG --date=short)
-  - echo $PACKAGE_DATE;
-  - sed -ei 's/@PACKAGE_DATE@/$(PACKAGE_DATE)/' deb/bintray-descriptor.json;
-  - sed -ei 's/@PACKAGE_VERSION@/$(PACKAGE_VERSION)/' deb/bintray-descriptor.json;
-  - cat deb/bintray-descriptor.json;
+    - echo $TRAVIS_COMMIT
+    - echo $TRAVIS_TAG
+    - echo $TRAVIS_BRANCH
+    - echo $TRAVIS_BUILD_NUMBER
+    - echo $TRAVIS_REPO_SLUG
 
 deploy:
   - provider: bintray
@@ -34,4 +30,4 @@ deploy:
     key: "$BINTRAY_API_KEY"
     on:
       tags: true
-      condition: "$PACKAGE_VERSION" != "" && "$BINTRAY_API_KEY" != ""
+      condition: $TRAVIS_TAG == apptuit-v*
