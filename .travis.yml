@@ -10,7 +10,7 @@ install:
   - pip install pylint ordereddict pyyaml mysqlclient
 
 before_script:
-  - if [[ $TRAVIS_TAG == apptuit-v* ]]; then PACKAGE_VERSION=${TRAVIS_TAG#apptuit-v}; fi
+  - if [[ $TRAVIS_TAG == apptuit-v* ]]; then export PACKAGE_VERSION=${TRAVIS_TAG#apptuit-v}; fi
   - echo $TRAVIS_TAG
   - echo $PACKAGE_VERSION
 
