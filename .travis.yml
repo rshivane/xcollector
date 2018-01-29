@@ -1,16 +1,37 @@
 language: python
+
 branches:
   only:
     - apptuit-master
+
 python:
   - "2.6"
   - "2.7"
+
 install:
   - sudo apt-get -qq update
   - sudo apt-get install -y rpm
   - pip install pylint ordereddict pyyaml mysqlclient
+
 script:
   - ./pylint-runner.py -s
   - ./tests.py
   - cd rpm; make; cd ..
   - cd deb; make; cd ..
+
+
+before_deploy:
+    - echo $TRAVIS_COMMIT
+    - echo $TRAVIS_TAG
+    - echo $TRAVIS_BRANCH
+    - echo $TRAVIS_BUILD_NUMBER
+    - echo $TRAVIS_REPO_SLUG
+
+deploy:
+  - provider: bintray
+    file: "deb/bintray-descriptor.json"
+    user: "$BINTRAY_USER"
+    key: "$BINTRAY_API_KEY"
+    on:
+      tags: true
+      condition: $TRAVIS_TAG == apptuit-v*
