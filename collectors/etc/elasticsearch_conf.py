@@ -16,7 +16,7 @@ def get_servers():
   """Get the ElasticSearch servers on this host.
 
   Returns:
-    An iterable of tuples of (host, port)
+    An iterable of tuples of (host, port, user, password)
   """
   return [ ("localhost", 9200) ]
 
