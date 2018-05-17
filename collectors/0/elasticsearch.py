@@ -37,6 +37,7 @@ from collectors.lib import utils
 from collectors.etc import elasticsearch_conf
 
 COLLECTION_INTERVAL = 60  # seconds
+MIN_SLEEP_TIME = 15  # seconds
 DEFAULT_TIMEOUT = 10.0  # seconds
 
 # regexes to separate differences in version numbers
@@ -130,7 +131,7 @@ def printmetric(metric, ts, value, tags):
     if tags:
         tags = " " + \
                " ".join("%s=%s" % (name.replace(" ", ""), value.replace(" ", "").replace(":", "-"))
-                              for name, value in tags.items())
+               for name, value in tags.items())
     else:
         tags = ""
     print("%s %d %s %s"
@@ -170,28 +171,27 @@ def _traverse(metric, stats, timestamp, tags, check=True):
     return
 
 
-def _collect_indices_total(metric, stats, tags, lock):
-    ts = int(time.time())
+def _collect_indices_total(metric, stats, tags, lock, timestamp):
     with lock:
-        _traverse(metric, stats, ts, tags)
+        _traverse(metric, stats, timestamp, tags)
 
 
-def _collect_indices_stats(metric, index_stats, tags, lock):
-    ts = int(time.time())
+def _collect_indices_stats(metric, index_stats, tags, lock, timestamp):
     with lock:
-        _traverse(metric, index_stats, ts, tags)
+        _traverse(metric, index_stats, timestamp, tags)
 
 
 def _collect_indices(server, metric, tags, lock):
+    ts = int(time.time())
     index_stats = _index_stats(server)
     total_stats = index_stats["_all"]
-    _collect_indices_total(metric + ".indices", total_stats, tags, lock)
+    _collect_indices_total(metric + ".indices", total_stats, tags, lock, ts)
 
     indices_stats = index_stats["indices"]
     while indices_stats:
         index_id, stats = indices_stats.popitem()
         index_tags = {"cluster": tags["cluster"], "index": index_id}
-        _collect_indices_stats(metric + ".indices.byindex", stats, index_tags, lock)
+        _collect_indices_stats(metric + ".indices.byindex", stats, index_tags, lock, ts)
 
 
 def _collect_master(server, metric, tags, lock):
@@ -277,9 +277,10 @@ def main(argv):
         for thread in threads:
             thread.join(DEFAULT_TIMEOUT)
 
-        utils.err("Done fetching elasticsearch metrics in [%d]s " % (int(time.time()) - ts0))
+        time_taken = int(time.time()) - ts0
+        utils.err("Done fetching elasticsearch metrics in [%d]s " % (time_taken))
         sys.stdout.flush()
-        time.sleep(COLLECTION_INTERVAL)
+        time.sleep(max(COLLECTION_INTERVAL - time_taken, MIN_SLEEP_TIME))
 
 
 if __name__ == "__main__":
