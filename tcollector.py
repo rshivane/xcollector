@@ -71,6 +71,8 @@ ALLOWED_INACTIVITY_TIME = 600  # seconds
 MAX_SENDQ_SIZE = 10000
 MAX_READQ_SIZE = 100000
 
+HTTP_REQUEST_TIMEOUT = 60
+
 
 def register_collector(collector):
     """Register a collector with the COLLECTORS global"""
@@ -819,7 +821,7 @@ class SenderThread(threading.Thread):
 
         try:
             LOG.debug("Writing body of %d lines / %d bytes" % (len(self.sendq), len(body)))
-            response = urlopen(req, body)
+            response = urlopen(req, body, timeout=HTTP_REQUEST_TIMEOUT)
             data = response.read().decode("utf-8")
             LOG.debug("Received response %s %s", response.getcode(), data.rstrip('\n'))
             # clear out the sendq
