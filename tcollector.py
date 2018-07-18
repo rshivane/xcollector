@@ -62,7 +62,7 @@ ALIVE = True
 # If the SenderThread catches more than this many consecutive uncaught
 # exceptions, something is not right and tcollector will shutdown.
 # Hopefully some kind of supervising daemon will then restart it.
-MAX_UNCAUGHT_EXCEPTIONS = 100
+MAX_UNCAUGHT_EXCEPTIONS = 10000
 DEFAULT_PORT = 4242
 MAX_REASONABLE_TIMESTAMP = 1600000000  # Good until September 2020 :)
 # How long to wait for datapoints before assuming
