@@ -309,7 +309,7 @@ def fetch_metrics():
             utils.err("Unexpected error: %s" % sys.exc_info()[0])
             traceback.print_exc()
             die()
-
+    sys.stdout.flush()
 
 if __name__ == '__main__':
     main()

@@ -354,10 +354,10 @@ class ReaderThread(threading.Thread):
             LOG.warning('%s line too long: %s', col.name, line)
             col.lines_invalid += 1
             return
-        parsed = re.match('^([-_./a-zA-Z0-9]+)\s+'  # Metric name.
+        parsed = re.match('^([\-_./a-zA-Z0-9]+)\s+'  # Metric name.
                           '(\d+\.?\d+)\s+'  # Timestamp.
                           '(\S+?)'  # Value (int or float).
-                          '((?:\s+[-_./a-zA-Z0-9]+=[-_./a-zA-Z0-9]+)*)$',  # Tags
+                          '((?:\s+[\-_./a-zA-Z0-9]+=[\-_./a-zA-Z0-9]+)*)$',  # Tags
                           line)
         if parsed is None:
             LOG.warning('%s sent invalid data: %s', col.name, line)
