@@ -16,15 +16,18 @@
 # Short-Description: XCollector - Data collection agent for apptuit.ai
 ### END INIT INFO
 
-WORKING_DIR=/usr/local/xcollector
-COLLECTOR_PATH=${WORKING_DIR}/collectors
-CONFIG_DIR=${WORKING_DIR}/conf
+BASE_NAME=`basename $0`
+PROG_NAME=${PROG_NAME-"$BASE_NAME"}
+INSTALL_DIR=/usr/local/xcollector
+WORKING_DIR=${WORKING_DIR-"$INSTALL_DIR"}
+COLLECTORS_DIR=${WORKING_DIR}/collectors
+YAML_CONF_DIR=${WORKING_DIR}/conf
 #RUN_AS_USER=
 #RUN_AS_GROUP=
 
-PYTHONPATH="$PYTHONPATH:${WORKING_DIR}"
+PYTHONPATH="$PYTHONPATH:${COLLECTORS_DIR}/.."
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON="${WORKING_DIR}/xcollector.py"
+DAEMON="${INSTALL_DIR}/xcollector.py"
 EXTRA_TAGS=""
 
 . /lib/lsb/init-functions
@@ -33,11 +36,11 @@ if [ -r /etc/default/xcollector ]; then
     . /etc/default/xcollector
 fi
 
-PIDFILE=${PIDFILE-"/var/run/xcollector/xcollector.pid"}
-LOGFILE=${LOGFILE-"/var/log/xcollector/xcollector.log"}
+PIDFILE=${PIDFILE-"/var/run/xcollector/$PROG_NAME.pid"}
+LOGFILE=${LOGFILE-"/var/log/xcollector/$PROG_NAME.log"}
 THIS_HOST=`hostname`
-RUN_AS_USER=${RUN_AS_USER-xcollector}
-RUN_AS_GROUP=${RUN_AS_GROUP-xcollector}
+RUN_AS_USER=${RUN_AS_USER-"xcollector"}
+RUN_AS_GROUP=${RUN_AS_GROUP-"xcollector"}
 
 EXTRA_TAGS_OPTS=""
 for TV in $EXTRA_TAGS; do
@@ -55,16 +58,16 @@ sanity_check() {
 
 case $1 in
     start)
-        log_daemon_msg "Starting xcollector"
+        log_daemon_msg "Starting $PROG_NAME"
         sanity_check || return $?
-        find "$COLLECTOR_PATH" -name '*.pyc' -delete
+        find "$COLLECTORS_DIR" -name '*.pyc' -delete
 
         taskset=""
         if [ -n "$CPU_LIST" ]; then
             if which taskset &>/dev/null; then
                 taskset="taskset -c $CPU_LIST"
             else
-                log_warning_msg "taskset not found, xcollector can't be"
+                log_warning_msg "taskset not found, $PROG_NAME can't be"
                     " pinned to $CPU_LIST"
             fi
         fi
@@ -73,15 +76,16 @@ case $1 in
             --pidfile "$PIDFILE" --chuid $RUN_AS_USER:$RUN_AS_GROUP\
             --startas $DAEMON -- \
             -t host=$THIS_HOST \
-            -P "$PIDFILE" --daemonize $EXTRA_TAGS_OPTS
+            -P "$PIDFILE" \
+            -c $COLLECTORS_DIR -y $YAML_CONF_DIR --logfile $LOGFILE --daemonize $EXTRA_TAGS_OPTS
 
         log_end_msg $?
         ;;
 
     stop)
-        log_daemon_msg "Stopping xcollector"
+        log_daemon_msg "Stopping $PROG_NAME"
         if [ ! -f "$PIDFILE" ]; then
-            log_failure_msg "$PIDFILE doesn't exist. xcollector not running?"
+            log_failure_msg "$PIDFILE doesn't exist. $PROG_NAME not running?"
             exit 0
         fi
         start-stop-daemon --stop --retry 30 --quiet --oknodo -u $RUN_AS_USER --pidfile "$PIDFILE" && rm -f "$PIDFILE"
@@ -94,12 +98,12 @@ case $1 in
         ;;
 
     status)
-        status_of_proc -p $PIDFILE "$DAEMON" "xcollector"
+        status_of_proc -p $PIDFILE "$DAEMON" "$PROG_NAME"
         exit $?
         ;;
 
     *)
-        echo "Usage: $0 {start|stop|restart|force-reload|status}"
+        echo "Usage: $PROG_NAME {start|stop|restart|force-reload|status}"
         exit 2
         ;;
 esac

@@ -33,6 +33,7 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import  datetime
 import json
 import base64
 import zlib
@@ -68,8 +69,9 @@ MAX_REASONABLE_TIMESTAMP = 1600000000  # Good until September 2020 :)
 # How long to wait for datapoints before assuming
 # a collector is dead and restarting it
 ALLOWED_INACTIVITY_TIME = 600  # seconds
-MAX_SENDQ_SIZE = 10000
-MAX_READQ_SIZE = 100000
+MAX_SENDQ_SIZE = 250000
+MAX_READQ_SIZE = 1500000
+YAML_CONFIG_FILE = '/etc/xcollector/xcollector.yml'
 
 
 def register_collector(collector):
@@ -203,12 +205,15 @@ class Collector(object):
            is calling us.  This is a generator that returns a line as it
            becomes available."""
 
+        LOG.info('Collecting (%s)', self.name)
         while self.proc is not None:
             self.read()
+            LOG.info('(%s) read complete. datalines: %d', self.name, len(self.datalines))
             if not len(self.datalines):
                 return
             while len(self.datalines):
                 yield self.datalines.pop(0)
+            LOG.info('(%s) pop complete. datalines: %d', self.name, len(self.datalines))
 
     def shutdown(self):
         """Cleanly shut down the collector"""
@@ -320,11 +325,11 @@ class ReaderThread(threading.Thread):
         # while breaking out every once in a while to setup selects
         # on new children.
         while ALIVE:
+            lines_processed = 0
             lines_dropped_init = self.lines_dropped
             alc = all_living_collectors()
             for col in alc:
-                for line in col.collect():
-                    self.process_line(col, line)
+                lines_processed += self.process_collector(col)
 
             if self.lines_dropped > lines_dropped_init:
                 LOG.error("DROPPED LINES: %s", self.lines_dropped - lines_dropped_init)
@@ -337,9 +342,27 @@ class ReaderThread(threading.Thread):
                     for col in all_collectors():
                         col.evict_old_keys(now)
 
-            # and here is the loop that we really should get rid of, this
-            # just prevents us from spinning right now
-            time.sleep(1)
+            LOG.warning('Reader -> readerq size: %s, lines processed: %s', self.readerq.qsize(), lines_processed)
+            if lines_processed < 100:
+                # and here is the loop that we really should get rid of, this
+                # just prevents us from spinning right now
+                time.sleep(1)
+
+    def process_collector(self, col):
+        LOG.info('Processing collector (%s)', col.name)
+        start_time = int(time.time())
+        lines_processed = 0
+        for line in col.collect():
+            self.process_line(col, line)
+            lines_processed += 1
+
+            # Yield if we have been reading from the same collector for too long
+            if lines_processed % 1000 == 0:
+                now = int(time.time())
+                if now - start_time > 1:
+                    LOG.warning('Yielding reading output from collector: %s (pid=%d) that started at [%s]', col.name, col.proc.pid, datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S,%f'))
+                    break
+        return lines_processed
 
     def process_line(self, col, line):
         """Parses the given line and appends the result to the reader queue."""
@@ -430,7 +453,10 @@ class ReaderThread(threading.Thread):
 
         col.lines_sent += 1
         if not self.readerq.nput(line):
+        # if False:
             self.lines_dropped += 1
+            if self.lines_dropped % 100 == 0:
+                LOG.error("LINES DROPPED so far: %s", self.lines_dropped)
 
 
 class SenderThread(threading.Thread):
@@ -544,6 +570,7 @@ class SenderThread(threading.Thread):
            own packet."""
 
         errors = 0  # How many uncaught exceptions in a row we got.
+        send_time = int(time.time())
         while ALIVE:
             try:
                 self.maintain_conn()
@@ -553,7 +580,6 @@ class SenderThread(threading.Thread):
                 except Empty:
                     continue
                 self.sendq.append(line)
-                time.sleep(5)  # Wait for more data
                 while True:
                     # prevents self.sendq fast growing in case of sending fails
                     # in send_data()
@@ -565,8 +591,14 @@ class SenderThread(threading.Thread):
                         break
                     self.sendq.append(line)
 
-                if ALIVE:
+                if not ALIVE:
+                    break
+
+                now = int(time.time())
+                if now - send_time > 5 or len(self.sendq) > MAX_SENDQ_SIZE:
+                    LOG.warning('Sender -> readerq size: %s', self.reader.readerq.qsize())
                     self.send_data()
+                    send_time = now
                 errors = 0  # We managed to do a successful iteration.
             except (ArithmeticError, EOFError, EnvironmentError, HTTPException, LookupError, ValueError) as e:
                 errors += 1
@@ -581,6 +613,7 @@ class SenderThread(threading.Thread):
                 LOG.exception('Uncaught exception in SenderThread, going to exit')
                 shutdown()
                 raise
+        pass
 
     def verify_conn(self):
         """Periodically verify that our connection to the TSD is OK
@@ -680,7 +713,7 @@ class SenderThread(threading.Thread):
             except socket.gaierror as e:
                 # Don't croak on transient DNS resolution issues.
                 if e.errno in (socket.EAI_AGAIN, socket.EAI_NONAME,
-                            socket.EAI_NODATA):
+                               socket.EAI_NODATA):
                     LOG.debug('DNS resolution failure: %s: %s', self.host, e)
                     continue
                 raise
@@ -798,6 +831,7 @@ class SenderThread(threading.Thread):
             print("Would have sent:\n%s" % json.dumps(metrics,
                                                       sort_keys=True,
                                                       indent=4))
+            self.sendq = []
             return
 
         if (self.current_tsd == -1) or (len(self.hosts) > 1):
@@ -834,7 +868,7 @@ class SenderThread(threading.Thread):
             LOG.error("Got error %s %s while sending %d lines / %d bytes", e, data.rstrip('\n'),
                       len(self.sendq), len(body))
             if e.code == 401:
-                LOG.error("Please check if your access_token is correct in /etc/xcollector/xcollector.yml")
+                LOG.error("Please check if your access_token is correct in %s" % YAML_CONFIG_FILE)
             if e.code > 399 and e.code < 500:
                 # clear out the sendq if there is a client error instead of retrying the same bad request forever
                 self.sendq = []
@@ -891,6 +925,9 @@ def parse_cmdline(argv):
     parser.add_option('-c', '--collector-dir', dest='cdir', metavar='DIR',
                       default=defaults['cdir'],
                       help=SUPPRESS_HELP)  # 'Directory where the collectors are located.'
+    parser.add_option('-y', '--yaml-conf-dir', dest='ydir', metavar='DIR',
+                      default=defaults['ydir'],
+                      help=SUPPRESS_HELP)  # 'Directory where the yaml confs are located.'
     parser.add_option('-d', '--dry-run', dest='dryrun', action='store_true',
                       default=defaults['dryrun'],
                       help=SUPPRESS_HELP)  # 'Don\'t actually send anything to the TSD, just print the datapoints.'
@@ -919,7 +956,7 @@ def parse_cmdline(argv):
                       default=defaults['verbose'],
                       help=SUPPRESS_HELP)  # 'Verbose mode (log debug messages).'
     parser.add_option('-t', '--tag', dest='tags', action='append',
-                      default=[], metavar='TAG',
+                      default=defaults['tags'], metavar='TAG',
                       help=SUPPRESS_HELP)  # 'Tags to append to all timeseries we send, e.g.: -t TAG=VALUE -t TAG2=VALUE'
     parser.add_option('-P', '--pidfile', dest='pidfile',
                       default=defaults['pidfile'],
@@ -980,10 +1017,27 @@ def parse_cmdline(argv):
     parser.add_option('--set-option-tags', dest='set_opt_global_tags',
                       help=SUPPRESS_HELP)  # 'Username to use for HTTP Basic Auth when sending the data via HTTP'
     (options, args) = parser.parse_args(args=argv[1:])
-    cmdline_dict = tag_str_list_to_dict(options.tags)
-    for key, value in defaults['tags'].items():
-        cmdline_dict[key] = value
-    options.tags = tag_dict_to_str_list(cmdline_dict)
+
+    yaml_configuration = yaml_conf.load_configuration(options.ydir, 'xcollector.yml')['collector']['config']
+    global YAML_CONFIG_FILE
+    YAML_CONFIG_FILE = os.path.join(options.ydir, 'xcollector.yml')
+
+    for key in yaml_configuration.keys():
+        yaml_value = yaml_configuration[key]
+        if key == "tags":
+            tags = tag_str_list_to_dict(options.tags)
+            for k, v in yaml_value.items():
+                tags[k] = v
+            setattr(options, key, tag_dict_to_str_list(tags))
+        else:
+            if key == "access_token":
+                key = "http_username"
+            elif key == "log_max_bytes":
+                key = "max_bytes"
+            elif key == "log_backup_count":
+                key = "backup_count"
+            setattr(options, key, yaml_value)
+
     if options.dedupinterval < 0:
         parser.error('--dedup-interval must be at least 0 seconds')
     if options.evictinterval <= options.dedupinterval:
@@ -1072,7 +1126,7 @@ def main(argv):
 
     if not options.http_username or options.http_username == '' or options.http_username == 'PASTE_ACCESS_TOKEN_HERE':
         sys.stderr.write('access_token is not specified. Please add Apptuit issued access_token to '
-                         '/etc/xcollector/xcollector.yml\n')
+                         '%s\n' % YAML_CONFIG_FILE)
         return 3
 
     if options.daemonize:
