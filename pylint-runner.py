@@ -40,7 +40,11 @@ def run_pylint(filename, options):
     pylint_output = WritableObject()
     from pylint import lint
     from pylint.reporters.text import TextReporter
-    lint.Run([filename] + ARGS, reporter=TextReporter(pylint_output), exit=False)
+    from pylint import __version__ as pylint_version
+    if pylint_version.startswith("2."):
+        lint.Run([filename] + ARGS, reporter=TextReporter(pylint_output), do_exit=False)
+    else:
+        lint.Run([filename] + ARGS, reporter=TextReporter(pylint_output), exit=False)
     return pylint_output.read()
 
 
