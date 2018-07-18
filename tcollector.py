@@ -62,7 +62,7 @@ ALIVE = True
 # If the SenderThread catches more than this many consecutive uncaught
 # exceptions, something is not right and tcollector will shutdown.
 # Hopefully some kind of supervising daemon will then restart it.
-MAX_UNCAUGHT_EXCEPTIONS = 10000
+MAX_UNCAUGHT_EXCEPTIONS = 100
 DEFAULT_PORT = 4242
 MAX_REASONABLE_TIMESTAMP = 1600000000  # Good until September 2020 :)
 # How long to wait for datapoints before assuming
@@ -70,6 +70,8 @@ MAX_REASONABLE_TIMESTAMP = 1600000000  # Good until September 2020 :)
 ALLOWED_INACTIVITY_TIME = 600  # seconds
 MAX_SENDQ_SIZE = 10000
 MAX_READQ_SIZE = 100000
+
+HTTP_REQUEST_TIMEOUT = 60
 
 
 def register_collector(collector):
@@ -819,7 +821,7 @@ class SenderThread(threading.Thread):
 
         try:
             LOG.debug("Writing body of %d lines / %d bytes" % (len(self.sendq), len(body)))
-            response = urlopen(req, body)
+            response = urlopen(req, body, timeout=HTTP_REQUEST_TIMEOUT)
             data = response.read().decode("utf-8")
             LOG.debug("Received response %s %s", response.getcode(), data.rstrip('\n'))
             # clear out the sendq
