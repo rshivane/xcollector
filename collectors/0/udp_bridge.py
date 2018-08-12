@@ -37,6 +37,7 @@ SIZE = 8192
 MAX_UNFLUSHED_DATA = 8192
 MAX_PACKETS_IN_MEMORY = 100
 
+ALIVE = True
 
 class ReaderQueue(Queue):
 
@@ -59,7 +60,8 @@ class SenderThread(threading.Thread):
     def run(self):
         unflushed_data_len = 0
         flush_timeout = int(time.time())
-        while True:
+        global ALIVE
+        while ALIVE:
             try:
                 data = self.readerq.get(True, 5)
                 print(data)
@@ -99,13 +101,14 @@ def main():
     except AttributeError:
         flush_delay = 60
 
+    global ALIVE
     readerq = ReaderQueue(MAX_PACKETS_IN_MEMORY)
     sender = SenderThread(readerq, flush_delay)
     sender.start()
 
     try:
         try:
-            while 1:
+            while ALIVE:
                 data, address = sock.recvfrom(SIZE)
                 if data:
                     lines = data.splitlines()
@@ -118,6 +121,7 @@ def main():
         except KeyboardInterrupt:
             utils.err("keyboard interrupt, exiting")
     finally:
+        ALIVE = False
         sock.close()
 
 
