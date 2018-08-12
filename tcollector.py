@@ -33,6 +33,7 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import  datetime
 import json
 import base64
 import zlib
@@ -322,11 +323,11 @@ class ReaderThread(threading.Thread):
         # while breaking out every once in a while to setup selects
         # on new children.
         while ALIVE:
+            lines_processed = 0
             lines_dropped_init = self.lines_dropped
             alc = all_living_collectors()
             for col in alc:
-                for line in col.collect():
-                    self.process_line(col, line)
+                lines_processed += self.process_collector(col)
 
             if self.lines_dropped > lines_dropped_init:
                 LOG.error("DROPPED LINES: %s", self.lines_dropped - lines_dropped_init)
@@ -339,9 +340,28 @@ class ReaderThread(threading.Thread):
                     for col in all_collectors():
                         col.evict_old_keys(now)
 
-            # and here is the loop that we really should get rid of, this
-            # just prevents us from spinning right now
-            time.sleep(1)
+            LOG.debug('Reader -> readerq size: %s, lines processed: %s', self.readerq.qsize(), lines_processed)
+            if lines_processed < 100:
+                # and here is the loop that we really should get rid of, this
+                # just prevents us from spinning right now
+                time.sleep(1)
+
+    def process_collector(self, col):
+        LOG.debug('Processing collector (%s)', col.name)
+        start_time = int(time.time())
+        lines_processed = 0
+        for line in col.collect():
+            self.process_line(col, line)
+            lines_processed += 1
+
+            # Yield if we have been reading from the same collector for too long
+            if lines_processed % 1000 == 0:
+                now = int(time.time())
+                if now - start_time > 1:
+                    LOG.info('Yielding reading output from collector: %s (pid=%d) that started at [%s]', col.name,
+                          col.proc.pid, datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S,%f'))
+                    break
+        return lines_processed
 
     def process_line(self, col, line):
         """Parses the given line and appends the result to the reader queue."""
@@ -546,6 +566,7 @@ class SenderThread(threading.Thread):
            own packet."""
 
         errors = 0  # How many uncaught exceptions in a row we got.
+        send_time = int(time.time())
         while ALIVE:
             try:
                 self.maintain_conn()
@@ -555,7 +576,6 @@ class SenderThread(threading.Thread):
                 except Empty:
                     continue
                 self.sendq.append(line)
-                time.sleep(5)  # Wait for more data
                 while True:
                     # prevents self.sendq fast growing in case of sending fails
                     # in send_data()
@@ -567,8 +587,14 @@ class SenderThread(threading.Thread):
                         break
                     self.sendq.append(line)
 
-                if ALIVE:
+                if not ALIVE:
+                    break
+
+                now = int(time.time())
+                if now - send_time > 5 or len(self.sendq) > MAX_SENDQ_SIZE:
+                    LOG.info('Sender -> readerq size: %s', self.reader.readerq.qsize())
                     self.send_data()
+                    send_time = now
                 errors = 0  # We managed to do a successful iteration.
             except (ArithmeticError, EOFError, EnvironmentError, HTTPException, LookupError, ValueError) as e:
                 errors += 1
@@ -583,6 +609,7 @@ class SenderThread(threading.Thread):
                 LOG.exception('Uncaught exception in SenderThread, going to exit')
                 shutdown()
                 raise
+        pass
 
     def verify_conn(self):
         """Periodically verify that our connection to the TSD is OK
@@ -800,6 +827,7 @@ class SenderThread(threading.Thread):
             print("Would have sent:\n%s" % json.dumps(metrics,
                                                       sort_keys=True,
                                                       indent=4))
+            self.sendq = []
             return
 
         if (self.current_tsd == -1) or (len(self.hosts) > 1):
@@ -1439,7 +1467,7 @@ def spawn_collector(col):
     # other logic and it makes no sense to update the last spawn time if the
     # collector didn't actually start.
     col.lastspawn = int(time.time())
-    # Without setting last_datapoint here, a long running check (>15s) will be 
+    # Without setting last_datapoint here, a long running check (>15s) will be
     # killed by check_children() the first time check_children is called.
     col.last_datapoint = col.lastspawn
     set_nonblocking(col.proc.stdout.fileno())

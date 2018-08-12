@@ -15,7 +15,14 @@
 
 import socket
 import sys
+import threading
 import time
+
+try:
+    from queue import Queue, Empty, Full
+except ImportError:
+    from Queue import Queue, Empty, Full
+
 from collectors.lib import utils
 
 try:
@@ -26,6 +33,44 @@ except ImportError:
 HOST = '127.0.0.1'
 PORT = 8953
 SIZE = 8192
+
+MAX_UNFLUSHED_DATA = 8192
+MAX_PACKETS_IN_MEMORY = 100
+
+
+class ReaderQueue(Queue):
+
+    def nput(self, value):
+        try:
+            self.put(value, False)
+        except Full:
+            utils.err("DROPPED LINES [%d] bytes" % len(value))
+            return False
+        return True
+
+
+class SenderThread(threading.Thread):
+
+    def __init__(self, readerq, flush_delay):
+        super(SenderThread, self).__init__()
+        self.readerq = readerq
+        self.flush_delay = flush_delay
+
+    def run(self):
+        unflushed_data_len = 0
+        flush_timeout = int(time.time())
+        while True:
+            try:
+                data = self.readerq.get(True, 5)
+                print(data)
+                unflushed_data_len += len(data)
+            except Empty:
+                pass
+            now = int(time.time())
+            if unflushed_data_len > MAX_UNFLUSHED_DATA or now > flush_timeout:
+                flush_timeout = now + self.flush_delay
+                sys.stdout.flush()
+                unflushed_data_len = 0
 
 
 def main():
@@ -54,7 +99,10 @@ def main():
     except AttributeError:
         flush_delay = 60
 
-    flush_timeout = int(time.time())
+    readerq = ReaderQueue(MAX_PACKETS_IN_MEMORY)
+    sender = SenderThread(readerq, flush_delay)
+    sender.start()
+
     try:
         try:
             while 1:
@@ -65,11 +113,7 @@ def main():
                 if not data:
                     utils.err("invalid data")
                     break
-                print(data)
-                now = int(time.time())
-                if now > flush_timeout:
-                    sys.stdout.flush()
-                    flush_timeout = now + flush_delay
+                readerq.nput(data)
 
         except KeyboardInterrupt:
             utils.err("keyboard interrupt, exiting")
