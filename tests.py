@@ -142,7 +142,7 @@ class UDPCollectorTests(unittest.TestCase):
         self.udp_globals['socket'] = mocks.Socket()
         self.udp_globals['sys'] = mocks.Sys()
         self.udp_globals['udp_bridge_conf'].enabled = lambda: True
-        self.udp_globals['udp_bridge_conf'].flushBeforeExit = True
+        self.udp_globals['udp_bridge_conf'].flushBeforeExit = lambda: True
         self.udp_globals['utils'] = mocks.Utils()
 
     def exec_script(self):

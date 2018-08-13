@@ -8,3 +8,7 @@ def flush_delay():
 
 def usetcp():
   return False
+
+
+def flushBeforeExit():
+  return False
