@@ -38,6 +38,8 @@ MAX_UNFLUSHED_DATA = 8192
 MAX_PACKETS_IN_MEMORY = 100
 
 ALIVE = True
+FLUSH_BEFORE_EXIT = udp_bridge_conf and hasattr(udp_bridge_conf, "flushBeforeExit") and udp_bridge_conf.flushBeforeExit
+
 
 class ReaderQueue(Queue):
 
@@ -61,18 +63,30 @@ class SenderThread(threading.Thread):
         unflushed_data_len = 0
         flush_timeout = int(time.time())
         global ALIVE
-        while ALIVE:
+        queue_is_empty = False
+        while ALIVE or (FLUSH_BEFORE_EXIT and not queue_is_empty):
             try:
-                data = self.readerq.get(True, 5)
+                data = self.readerq.get(True, 1)
+                trace("DEQUEUED")
                 print(data)
+                trace("PRINTED")
                 unflushed_data_len += len(data)
+                queue_is_empty = False
             except Empty:
-                pass
+                queue_is_empty = True
+
             now = int(time.time())
             if unflushed_data_len > MAX_UNFLUSHED_DATA or now > flush_timeout:
                 flush_timeout = now + self.flush_delay
                 sys.stdout.flush()
                 unflushed_data_len = 0
+
+        trace("SENDER THREAD EXITING")
+
+
+def trace(msg):
+    # utils.err(msg)
+    pass
 
 
 def main():
@@ -111,18 +125,23 @@ def main():
             while ALIVE:
                 data, address = sock.recvfrom(SIZE)
                 if data:
+                    trace("Read packet:")
                     lines = data.splitlines()
                     data = '\n'.join(map(removePut, lines))
+                    trace(data)
                 if not data:
                     utils.err("invalid data")
                     break
                 readerq.nput(data)
+                trace("ENQUEUED")
 
         except KeyboardInterrupt:
             utils.err("keyboard interrupt, exiting")
     finally:
         ALIVE = False
         sock.close()
+        sender.join()
+        trace("MAIN THREAD EXITING")
 
 
 if __name__ == "__main__":
