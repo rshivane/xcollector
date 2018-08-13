@@ -38,7 +38,7 @@ MAX_UNFLUSHED_DATA = 8192
 MAX_PACKETS_IN_MEMORY = 100
 
 ALIVE = True
-FLUSH_BEFORE_EXIT = udp_bridge_conf and hasattr(udp_bridge_conf, "flushBeforeExit") and udp_bridge_conf.flushBeforeExit
+FLUSH_BEFORE_EXIT = udp_bridge_conf and udp_bridge_conf.flushBeforeExit()
 
 
 class ReaderQueue(Queue):
@@ -66,7 +66,7 @@ class SenderThread(threading.Thread):
         queue_is_empty = False
         while ALIVE or (FLUSH_BEFORE_EXIT and not queue_is_empty):
             try:
-                data = self.readerq.get(True, 1)
+                data = self.readerq.get(True, 2)
                 trace("DEQUEUED")
                 print(data)
                 trace("PRINTED")
