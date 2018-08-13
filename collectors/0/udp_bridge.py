@@ -38,7 +38,7 @@ MAX_UNFLUSHED_DATA = 8192
 MAX_PACKETS_IN_MEMORY = 100
 
 ALIVE = True
-FLUSH_BEFORE_EXIT = udp_bridge_conf and udp_bridge_conf.flushBeforeExit()
+FLUSH_BEFORE_EXIT = udp_bridge_conf and udp_bridge_conf.flush_before_exit()
 
 
 class ReaderQueue(Queue):

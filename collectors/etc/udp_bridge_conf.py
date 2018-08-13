@@ -10,5 +10,5 @@ def usetcp():
   return False
 
 
-def flushBeforeExit():
+def flush_before_exit():
   return False
