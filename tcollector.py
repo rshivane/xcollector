@@ -1093,8 +1093,6 @@ def main(argv):
         options, args = parse_cmdline(argv)
     except:
         sys.stderr.write("Unexpected error: %s" % sys.exc_info()[0])
-        import traceback
-        traceback.print_exc()
         return 1
 
     if options.set_opt_global_tags:
