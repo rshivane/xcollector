@@ -73,6 +73,7 @@ MAX_SENDQ_SIZE = 10000
 MAX_READQ_SIZE = 100000
 
 HTTP_REQUEST_TIMEOUT = 60
+YAML_CONFIG_FILE = '/etc/xcollector/xcollector.yml'
 
 
 def register_collector(collector):
@@ -592,7 +593,7 @@ class SenderThread(threading.Thread):
 
                 now = int(time.time())
                 if now - send_time > 5 or len(self.sendq) > MAX_SENDQ_SIZE:
-                    LOG.info('Sender -> readerq size: %s', self.reader.readerq.qsize())
+                    LOG.debug('Sender -> readerq size: %s', self.reader.readerq.qsize())
                     self.send_data()
                     send_time = now
                 errors = 0  # We managed to do a successful iteration.
@@ -889,20 +890,6 @@ def setup_logging(logfile=DEFAULT_LOG, max_bytes=None, backup_count=None):
 def parse_cmdline(argv):
     """Parses the command-line."""
 
-    def tag_str_list_to_dict(list):
-        tag_dict = {}
-        for tag_str in list:
-            tag_value_split = tag_str.split("=")
-            if (len(tag_value_split) == 2):
-                tag_dict[tag_value_split[0].strip()] = tag_value_split[1].strip()
-        return tag_dict
-
-    def tag_dict_to_str_list(dict):
-        tag_list = []
-        for key, value in dict.items():
-            tag_list.append(key.strip() + "=" + value.strip())
-        return tag_list
-
     try:
         from collectors.etc import config
         defaults = config.get_defaults()
@@ -921,6 +908,9 @@ def parse_cmdline(argv):
     parser.add_option('-c', '--collector-dir', dest='cdir', metavar='DIR',
                       default=defaults['cdir'],
                       help=SUPPRESS_HELP)  # 'Directory where the collectors are located.'
+    parser.add_option('-y', '--yaml-conf-dir', dest='ydir', metavar='DIR',
+                      default=defaults['ydir'],
+                      help=SUPPRESS_HELP)  # 'Directory where the yaml confs are located.'
     parser.add_option('-d', '--dry-run', dest='dryrun', action='store_true',
                       default=defaults['dryrun'],
                       help=SUPPRESS_HELP)  # 'Don\'t actually send anything to the TSD, just print the datapoints.'
@@ -1010,10 +1000,11 @@ def parse_cmdline(argv):
     parser.add_option('--set-option-tags', dest='set_opt_global_tags',
                       help=SUPPRESS_HELP)  # 'Username to use for HTTP Basic Auth when sending the data via HTTP'
     (options, args) = parser.parse_args(args=argv[1:])
-    cmdline_dict = tag_str_list_to_dict(options.tags)
-    for key, value in defaults['tags'].items():
-        cmdline_dict[key] = value
-    options.tags = tag_dict_to_str_list(cmdline_dict)
+
+    global YAML_CONFIG_FILE
+    YAML_CONFIG_FILE = os.path.join(options.ydir, 'xcollector.yml')
+    load_yaml_conf(options)
+
     if options.dedupinterval < 0:
         parser.error('--dedup-interval must be at least 0 seconds')
     if options.evictinterval <= options.dedupinterval:
@@ -1025,6 +1016,20 @@ def parse_cmdline(argv):
     if (options.daemonize or options.max_bytes) and not options.backup_count:
         options.backup_count = 1
     return (options, args)
+
+
+def load_yaml_conf(options):
+    key_mappings = {"access_token": "http_username", "log_max_bytes": "max_bytes", "log_backup_count": "backup_count"}
+    yaml_configuration = yaml_conf.load_configuration(options.ydir, 'xcollector.yml')['collector']['config']
+    for key in yaml_configuration.keys():
+        yaml_value = yaml_configuration[key]
+        if key == "tags":
+            tags = dict(item.split("=", 1) for item in options.tags)
+            for k, v in yaml_value.items():
+                tags[k] = v
+            setattr(options, key, [k + "=" + v for k, v in tags.items()])
+        else:
+            setattr(options, key_mappings.get(key, key), yaml_value)
 
 
 def daemonize():
@@ -1088,6 +1093,8 @@ def main(argv):
         options, args = parse_cmdline(argv)
     except:
         sys.stderr.write("Unexpected error: %s" % sys.exc_info()[0])
+        import traceback
+        traceback.print_exc()
         return 1
 
     if options.set_opt_global_tags:
@@ -1102,7 +1109,7 @@ def main(argv):
 
     if not options.http_username or options.http_username == '' or options.http_username == 'PASTE_ACCESS_TOKEN_HERE':
         sys.stderr.write('access_token is not specified. Please add Apptuit issued access_token to '
-                         '/etc/xcollector/xcollector.yml\n')
+                         '%s\n' % YAML_CONFIG_FILE)
         return 3
 
     if options.daemonize:

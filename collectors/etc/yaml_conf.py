@@ -12,7 +12,7 @@ except ImportError:
 
 
 def get_yaml_conf_dir():
-    current_script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+    current_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     if "/collectors/0" in current_script_dir:
         yaml_conf_dir = os.path.join(current_script_dir[:current_script_dir.index("/collectors/0")], 'conf')
     else:
@@ -22,6 +22,10 @@ def get_yaml_conf_dir():
 
 def load_collector_configuration(config_file):
     yaml_conf_dir = get_yaml_conf_dir()
+    return load_configuration(yaml_conf_dir, config_file)
+
+
+def load_configuration(yaml_conf_dir, config_file):
     with open(os.path.join(yaml_conf_dir, config_file), 'r') as stream:
         try:
             return yaml.safe_load(stream)

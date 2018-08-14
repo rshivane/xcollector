@@ -28,10 +28,6 @@
 # sys.path, so you can import other Python modules from this directory
 # or its subdirectories.
 
-from collectors.etc import yaml_conf
-
-TCOLLECTOR_CONF = yaml_conf.load_collector_configuration('xcollector.yml')['collector']
-
 def onload(options, tags):
     """Function called by tcollector when it starts up.
 
@@ -41,42 +37,42 @@ def onload(options, tags):
     """
     pass
 
+
 def get_defaults():
     """Configuration values to use as defaults in the code
 
         This is called by the OptionParser.
     """
 
-    defaults = TCOLLECTOR_CONF['config']
-    defaults['pidfile'] = "/var/run/xcollector.pid"
-    defaults['no_tcollector_stats'] = False
-    defaults['evictinterval'] = 6000
-    defaults['dedupinterval'] = 0
-    defaults['deduponlyzero'] = False
-    defaults['allowed_inactivity_time'] = 600
-    defaults['maxtags'] = 25
-    defaults['max_bytes'] = defaults['log_max_bytes']
-    defaults['http_username'] = defaults['access_token']
-    defaults['http_password'] = True
-    defaults['reconnectinterval'] = 0
-    if 'host' not in defaults:
-        defaults['host'] = "api.apptuit.ai"
-    if 'port' not in defaults:
-        defaults['port'] = 443
-    defaults['http'] = True
-    defaults['http_api_path'] = "api/put"
-    if 'tags' not in defaults:
-        defaults['tags'] = {}
-    defaults['remove_inactive_collectors'] = False
-    defaults['backup_count'] = defaults['log_backup_count']
-    defaults["cdir"] = "/usr/local/xcollector/collectors"
-    if 'ssl' not in defaults:
-        defaults['ssl'] = True
-    if 'compression_threshold' not in defaults:
-        defaults['compression_threshold'] = 6 * 1024
-    defaults['stdin'] = False
-    if 'daemonize' not in defaults:
-        defaults['daemonize'] = False
-    defaults['hosts'] = False
+    defaults = {
+        'pidfile': '/var/run/xcollector.pid',
+        'no_tcollector_stats': False,
+        'evictinterval': 6000,
+        'dedupinterval': 0,
+        'deduponlyzero': False,
+        'allowed_inactivity_time': 600,
+        'maxtags': 25,
+        'max_bytes': 64 * 1024 * 1024,
+        'http_username': False,
+        'http_password': True,
+        'reconnectinterval': 0,
+        'host': 'api.apptuit.ai',
+        'port': 443,
+        'http': True,
+        'http_api_path': "api/put",
+        'tags': [],
+        'remove_inactive_collectors': False,
+        'backup_count': 1,
+        'cdir': "/usr/local/xcollector/collectors",
+        'ydir': "/etc/xcollector/",
+        'ssl': True,
+        'compression_threshold': 6 * 1024,
+        'stdin': False,
+        'daemonize': False,
+        'hosts': False,
+        'logfile': '/var/log/xcollector/xcollector.log',
+        'verbose': False,
+        'dryrun': False,
+    }
 
     return defaults
