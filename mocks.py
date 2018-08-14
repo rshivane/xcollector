@@ -66,12 +66,18 @@ class Sys():
         def write(self, outString):
             self.lines.append(outString)
 
+        def flush(self):
+            pass
+
     class Stdout():
         def __init__(self):
             self.lines = []
 
         def write(self, outString):
             self.lines.append(outString)
+
+        def flush(self):
+            pass
 
 class Utils():
     def __init__(self):

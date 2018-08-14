@@ -15,7 +15,14 @@
 
 import socket
 import sys
+import threading
 import time
+
+try:
+    from queue import Queue, Empty, Full
+except ImportError:
+    from Queue import Queue, Empty, Full
+
 from collectors.lib import utils
 
 try:
@@ -26,6 +33,60 @@ except ImportError:
 HOST = '127.0.0.1'
 PORT = 8953
 SIZE = 8192
+
+MAX_UNFLUSHED_DATA = 8192
+MAX_PACKETS_IN_MEMORY = 100
+
+ALIVE = True
+FLUSH_BEFORE_EXIT = udp_bridge_conf and udp_bridge_conf.flush_before_exit()
+
+
+class ReaderQueue(Queue):
+
+    def nput(self, value):
+        try:
+            self.put(value, False)
+        except Full:
+            utils.err("DROPPED LINES [%d] bytes" % len(value))
+            return False
+        return True
+
+
+class SenderThread(threading.Thread):
+
+    def __init__(self, readerq, flush_delay):
+        super(SenderThread, self).__init__()
+        self.readerq = readerq
+        self.flush_delay = flush_delay
+
+    def run(self):
+        unflushed_data_len = 0
+        flush_timeout = int(time.time())
+        global ALIVE
+        queue_is_empty = False
+        while ALIVE or (FLUSH_BEFORE_EXIT and not queue_is_empty):
+            try:
+                data = self.readerq.get(True, 2)
+                trace("DEQUEUED")
+                print(data)
+                trace("PRINTED")
+                unflushed_data_len += len(data)
+                queue_is_empty = False
+            except Empty:
+                queue_is_empty = True
+
+            now = int(time.time())
+            if unflushed_data_len > MAX_UNFLUSHED_DATA or now > flush_timeout:
+                flush_timeout = now + self.flush_delay
+                sys.stdout.flush()
+                unflushed_data_len = 0
+
+        trace("SENDER THREAD EXITING")
+
+
+def trace(msg):
+    # utils.err(msg)
+    pass
 
 
 def main():
@@ -54,27 +115,33 @@ def main():
     except AttributeError:
         flush_delay = 60
 
-    flush_timeout = int(time.time())
+    global ALIVE
+    readerq = ReaderQueue(MAX_PACKETS_IN_MEMORY)
+    sender = SenderThread(readerq, flush_delay)
+    sender.start()
+
     try:
         try:
-            while 1:
+            while ALIVE:
                 data, address = sock.recvfrom(SIZE)
                 if data:
+                    trace("Read packet:")
                     lines = data.splitlines()
                     data = '\n'.join(map(removePut, lines))
+                    trace(data)
                 if not data:
                     utils.err("invalid data")
                     break
-                print(data)
-                now = int(time.time())
-                if now > flush_timeout:
-                    sys.stdout.flush()
-                    flush_timeout = now + flush_delay
+                readerq.nput(data)
+                trace("ENQUEUED")
 
         except KeyboardInterrupt:
             utils.err("keyboard interrupt, exiting")
     finally:
+        ALIVE = False
         sock.close()
+        sender.join()
+        trace("MAIN THREAD EXITING")
 
 
 if __name__ == "__main__":
