@@ -142,7 +142,6 @@ if [ "$1" = "2" ]; then
 fi
 
 %post
-chkconfig --add xcollector
 if [ ! -L "/etc/xcollector" ]
 then
   ln -s %{tcollectordir}/conf /etc/xcollector
@@ -183,6 +182,9 @@ fi
 chown -R $XCOLLECTOR_USER.$XCOLLECTOR_GROUP /usr/local/xcollector
 chown -R $XCOLLECTOR_USER.$XCOLLECTOR_GROUP /var/run/xcollector
 chown -R $XCOLLECTOR_USER.$XCOLLECTOR_GROUP /var/log/xcollector
+
+chkconfig --add xcollector
+grep PASTE_ACCESS_TOKEN_HERE /etc/xcollector/xcollector.yml >/dev/null || service xcollector start
 
 %preun
 if [ "$1" = "0" ]; then
